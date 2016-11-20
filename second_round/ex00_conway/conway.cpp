@@ -15,6 +15,11 @@ class coord
 		std::string serialize() { return (std::to_string(this->x) + " " + std::to_string(this->y)); };
 };
 
+std::vector<coord>  append(std::vector<coord> a, std::vector<coord> b)
+{
+    a.insert( a.end(), b.begin(), b.end() );
+    return (a);
+}
 std::vector< coord >   find(std::vector< std::string > board, char c)
 {
     std::vector< coord >    res;
@@ -64,6 +69,10 @@ std::vector< coord > is_neighbour(std::vector< std::string > board, coord pos, c
 std::vector< coord > neighbour_available(std::vector< std::string > board, coord pos)
 {
     return (is_neighbour(board, pos, '-'));
+}
+std::vector< coord > neighbour_unavailable(std::vector< std::string > board, coord pos)
+{
+    return (append(is_neighbour(board, pos, 'b'), is_neighbour(board, pos, 'w')));
 }
 
 std::vector< coord >    check_exploder(std::vector<std::string> board, char player)
@@ -115,31 +124,43 @@ bool    print_first_av(std::vector<std::string> board, std::vector< coord > expl
     }
     return (false);
 }
-void    incr_score_neighbour(std::vector< coord > free_nb, std::map< std::string, int > &result)
+void    incr_score_neighbour(std::vector< coord > free_nb, std::map< std::string, int > &result, int inc)
 {
     for(int i = 0; i < free_nb.size(); i++)
     {
-        result[free_nb[i].serialize()] = result[free_nb[i].serialize()] +  1;
+        result[free_nb[i].serialize()] = result[free_nb[i].serialize()] + inc;
     }
 }
 
-bool    print_deadly(std::vector< std::string > board, std::vector< coord > free_nb, std::vector< coord > them)
+bool    print_deadly(std::vector< std::string > board, std::vector< coord > them, std::vector< coord > us)
 {
     std::map< std::string, int >    result;
     std::pair< std::string, int >   max;
+    std::vector<coord>              free_nb;
+    std::vector<coord>              not_free_nb;
 
-    max.second = -1;
+    max.second = -142;
     
     for (int i = 0; i < them.size(); i++)
     {
         free_nb = neighbour_available(board, them[i]);
-        if (free_nb.size() > 4)
-            incr_score_neighbour(free_nb, result);
+        not_free_nb = neighbour_unavailable(board, them[i]);
+        if (not_free_nb.size() < 4)
+            incr_score_neighbour(free_nb, result, 100);
+    }
+    for (int i = 0; i < us.size(); i++)
+    {
+        free_nb = neighbour_available(board, us[i]);
+        not_free_nb = neighbour_unavailable(board, us[i]);
+        if (not_free_nb.size() < 4)
+            incr_score_neighbour(free_nb, result, -1);
     }
     
     typedef std::map< std::string, int >::iterator it_type;
     for(it_type it = result.begin(); it != result.end(); it++)
     {
+        std::cerr << "all.coord: " << it->first << std::endl;
+        std::cerr << "all.score: " << it->second << std::endl;
         if (it->second > max.second)
 		{
             max.first = it->first;
@@ -147,9 +168,10 @@ bool    print_deadly(std::vector< std::string > board, std::vector< coord > free
 		}
     }
     
-    if(max.second != -1)
+    if(max.second != -142)
     {
         std::cout << max.first << std::endl;
+        std::cerr << "result of max: " << max.second << std::endl;
         return(1);
     }
     else
@@ -161,7 +183,6 @@ void nextMove(char player, vector <string> board)
     std::vector< coord >    us;
     std::vector< coord >    them;
     std::vector< coord >    available;
-    std::vector< coord >    free_nb;
     std::vector< coord >    exploder;
 
     us = find(board, player);
@@ -169,12 +190,13 @@ void nextMove(char player, vector <string> board)
     available = find(board, '-');
     exploder = check_exploder(board, player);
 
+    std::cerr << "nb_them: " << them.size() << std::endl;
     if (them.size() == 0)
     {
         std::cout << 15 << " " <<  15 << std::endl;
         return ;
     }
-    if (print_deadly(board, free_nb, them)) return ;
+    if (print_deadly(board, them, us)) return ;
     if (print_first_av(board, exploder)) return ;
     std::cout << available[available.size()/5].x << " " <<  available[available.size()/5].y << std::endl;
     
