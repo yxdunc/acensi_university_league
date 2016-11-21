@@ -254,8 +254,8 @@ void nextMove(char player, vector <string> board)
         std::cout << 15 << " " <<  15 << std::endl;
         return ;
     }
-    if (print_deadly(board, them, us, player, available)) return ;
     if (print_first_av(board, exploder)) return ;
+    if (print_deadly(board, them, us, player, available)) return ;
     std::cout << available[available.size()/5].x << " " <<  available[available.size()/5].y << std::endl;
     
     return ;
