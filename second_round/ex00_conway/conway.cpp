@@ -132,6 +132,16 @@ void    incr_score_neighbour(std::vector< coord > free_nb, std::map< std::string
     }
 }
 
+
+void    suicide_penalty(std::vector<std::string> board, std::vector< coord > free_nb, std::map< std::string, int > &result, int inc)
+{
+    for(int i = 0; i < free_nb.size(); i++)
+    {
+        if(neighbour_unavailable(board, free_nb[i]).size() != 3 && neighbour_unavailable(board, free_nb[i]).size() != 2)
+            result[free_nb[i].serialize()] = result[free_nb[i].serialize()] + inc;
+    }
+}
+
 bool    print_deadly(std::vector< std::string > board, std::vector< coord > them, std::vector< coord > us)
 {
     std::map< std::string, int >    result;
@@ -154,6 +164,8 @@ bool    print_deadly(std::vector< std::string > board, std::vector< coord > them
         not_free_nb = neighbour_unavailable(board, us[i]);
         if (not_free_nb.size() < 4)
             incr_score_neighbour(free_nb, result, -1);
+        suicide_penalty(board, free_nb, result, -10);
+        
     }
     
     typedef std::map< std::string, int >::iterator it_type;
@@ -219,4 +231,3 @@ int main(void)
 
     return 0;
 }
-
