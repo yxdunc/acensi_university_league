@@ -161,15 +161,29 @@ void    incr_score_neighbour(std::vector< coord > free_nb, std::map< std::string
 
 void    suicide_penalty(std::vector<std::string> board, std::vector< coord > free_nb, std::map< std::string, int > &result, int inc, char player)
 {
+    unsigned int    unav;
+    
     for(int i = 0; i < free_nb.size(); i++)
     {
-        if(neighbour_unavailable(board, free_nb[i], player).size() != 3 && neighbour_unavailable(board, free_nb[i], player).size() != 2)
+        unav = neighbour_unavailable(board, free_nb[i], player).size();
+        if(unav != 3 && unav != 2)
             result[free_nb[i].serialize()] = result[free_nb[i].serialize()] + inc;
     }
 }
 
+void    birthplace_bonus(std::vector<std::string> board, std::vector< coord > free_nb, std::map< std::string, int > &result, int inc, char player)
+{
+    for(int i = 0; i < free_nb.size(); i++)
+    {
+        if(is_neighbour(board, free_nb[i], (player == 'w') ? 'b' : 'w').size() != 1 && neighbour_unavailable(board, free_nb[i], player).size() == 3)
+        {
+            std::cerr << "birth place at:" << free_nb[i].serialize() << std::endl;
+            result[free_nb[i].serialize()] = result[free_nb[i].serialize()] + inc;
+        }
+    }
+}
 
-bool    print_deadly(std::vector< std::string > board, std::vector< coord > them, std::vector< coord > us, char player)
+bool    print_deadly(std::vector< std::string > board, std::vector< coord > them, std::vector< coord > us, char player, std::vector< coord > available)
 {
     std::map< std::string, int >    result;
     std::pair< std::string, int >   max;
@@ -177,6 +191,7 @@ bool    print_deadly(std::vector< std::string > board, std::vector< coord > them
     std::vector<coord>              not_free_nb;
 
     max.second = -142;
+    
     
     for (int i = 0; i < them.size(); i++)
     {
@@ -189,19 +204,19 @@ bool    print_deadly(std::vector< std::string > board, std::vector< coord > them
     {
         free_nb = neighbour_available(board, us[i]);
         not_free_nb = neighbour_unavailable(board, us[i], player);
-        if (not_free_nb.size() < 4)
+        if (not_free_nb.size() == 1)
+            incr_score_neighbour(free_nb, result, 10);
+        else if (not_free_nb.size() < 4)
             incr_score_neighbour(free_nb, result, -1);
-        else if (not_free_nb.size() == 1)
-            incr_score_neighbour(free_nb, result, 50);
-        suicide_penalty(board, free_nb, result, -100, player);
-        
     }
+    suicide_penalty(board, available, result, -100, player);
+    birthplace_bonus(board, available, result, 100, player);
     
     typedef std::map< std::string, int >::iterator it_type;
     for(it_type it = result.begin(); it != result.end(); it++)
     {
-        std::cerr << "all.coord: " << it->first << std::endl;
-        std::cerr << "all.score: " << it->second << std::endl;
+        //std::cerr << "all.coord: " << it->first << std::endl;
+        //std::cerr << "all.score: " << it->second << std::endl;
         if (it->second > max.second)
 		{
             max.first = it->first;
@@ -239,7 +254,7 @@ void nextMove(char player, vector <string> board)
         std::cout << 15 << " " <<  15 << std::endl;
         return ;
     }
-    if (print_deadly(board, them, us, player)) return ;
+    if (print_deadly(board, them, us, player, available)) return ;
     if (print_first_av(board, exploder)) return ;
     std::cout << available[available.size()/5].x << " " <<  available[available.size()/5].y << std::endl;
     
