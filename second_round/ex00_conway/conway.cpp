@@ -38,6 +38,20 @@ std::vector< coord >   find(std::vector< std::string > board, char c)
 	return(res);
 }
 
+coord      find_first(std::vector< std::string > board, char c)
+{
+    for (int x = 0; x < board.size(); x++)
+    {
+        for (int y = 0; y < board[0].size(); y++)
+        {
+            if(board[x][y] == c)
+                return(coord(x, y));
+        }
+    }
+    std::cerr << "__not_found__" << std::endl;
+	return(coord(-1, -1));
+}
+
 
 int      count(std::vector< std::string > board, char c)
 {
@@ -198,11 +212,13 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
     for(int i = 0; i < depth; i++)
     {
         board = simulate_step(board, player);
-        if(count(board, player) != 0 && count(board, (player == 'w') ? 'b' : 'w') == 0)
+        if(count(board, (player == 'w') ? 'b' : 'w') == 0 && count(board, player) != 0)
             score += 100;
+        else if(count(board, player) == 0)
+            return 0;
+        score += count(board, player) - count(board, (player == 'w') ? 'b' : 'w');
     }
     
-    score += count(board, player) - count(board, (player == 'w') ? 'b' : 'w');
     return (score);
 }
 
@@ -221,7 +237,7 @@ bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char
     {
         board_test = board;
         board_test[moves[i].x][moves[i].y] = player;
-        temp = simulate_game(board_test, player, 10);
+        temp = simulate_game(board_test, player, 8);
         if(temp > max)
         {
             max = temp;
@@ -234,15 +250,17 @@ bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char
 
 void nextMove(char player, vector <string> board)
 {
-    std::vector< coord >    available;
+    coord    available;
     
-    available = find(board, '-');
-    if(available.size() == 841)
+    available = find_first(board, '-');
+    
+    if(find_first(board, 'w').x == -1 && find_first(board, 'b').x == -1)
     {
-        std::cout << available[0].x << " " <<  available[0].y << std::endl;
+        std::cout << available.x << " " <<  available.y << std::endl;
         return ;
     }
     if(best_move(board, neighbour_cells(board), player)) return ;
+    //neighbour_of_neighbour
     
     return ;
 }
