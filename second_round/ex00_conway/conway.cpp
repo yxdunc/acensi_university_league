@@ -48,7 +48,7 @@ coord      find_first(std::vector< std::string > board, char c)
                 return(coord(x, y));
         }
     }
-    std::cerr << "__not_found__" << std::endl;
+    std::cerr << "__NOT_FOUND__" << std::endl;
 	return(coord(-1, -1));
 }
 
@@ -197,7 +197,7 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
         good = count(board, player);
         if(bad == 0 && good != 0)
         {
-            score += 100;
+            score += 100; // try a return here ?
             break ;
         }
         else if(bad != 0 && good == 0)
@@ -212,6 +212,29 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
     return (score);
 }
 
+int     first_to_play(std::vector<std::string> board, char player, int depth, std::vector<coord> moves, int in_use)
+{
+    std::vector<string> board_test;
+    int     max;
+    int     temp;
+    
+    max = 100;
+    
+    for (int i = 0; i < moves.size() && i < 50; i++)
+    {
+        if (i != in_use)
+        {
+            board_test = board;
+            board_test[moves[i].x][moves[i].y] = (player == 'w') ? 'b' : 'w';
+            temp = simulate_game(board_test, player, depth);
+            if(temp < max)
+            {
+                max = temp;
+            }
+        }
+    }
+    return(max);
+}
 bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char player)
 {
     std::vector<string> board_test;
@@ -227,7 +250,10 @@ bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char
     {
         board_test = board;
         board_test[moves[i].x][moves[i].y] = player;
-        temp = simulate_game(board_test, player, 8);
+        if(player == 'w')
+            temp = first_to_play(board_test, player, 1, moves, i);
+        else
+            temp = simulate_game(board_test, player, 8);
         if(temp > max)
         {
             max = temp;
