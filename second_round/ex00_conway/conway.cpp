@@ -48,7 +48,7 @@ coord      find_first(std::vector< std::string > board, char c)
                 return(coord(x, y));
         }
     }
-    std::cerr << "__NOT_FOUND__" << std::endl;
+    std::cerr << "__not_found__" << std::endl;
 	return(coord(-1, -1));
 }
 
@@ -111,10 +111,24 @@ bool    has_neighbour(std::vector< std::string > board, coord pos)
     n_pos.push_back(coord(pos.x - 1, pos.y + 1));
     n_pos.push_back(coord(pos.x - 1, pos.y - 1));
     
+    //
     n_pos.push_back(coord(pos.x + 2, pos.y));
     n_pos.push_back(coord(pos.x - 2, pos.y));
     n_pos.push_back(coord(pos.x, pos.y + 2));
     n_pos.push_back(coord(pos.x, pos.y - 2));
+    
+    n_pos.push_back(coord(pos.x + 2, pos.y + 1));
+    n_pos.push_back(coord(pos.x + 2, pos.y - 1));
+    
+    n_pos.push_back(coord(pos.x - 2, pos.y + 1));
+    n_pos.push_back(coord(pos.x - 2, pos.y - 1));
+    
+    n_pos.push_back(coord(pos.x + 1, pos.y + 2));
+    n_pos.push_back(coord(pos.x - 1, pos.y + 2));
+    
+    n_pos.push_back(coord(pos.x + 1, pos.y - 2));
+    n_pos.push_back(coord(pos.x - 1, pos.y - 2));
+    //
     
     for (int i = 0; i < n_pos.size(); i++)
     {
@@ -189,7 +203,6 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
     int     bad;
     
     score = 0;
-    
     for(int i = 0; i < depth; i++)
     {
         board = simulate_step(board, player);
@@ -197,12 +210,12 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
         good = count(board, player);
         if(bad == 0 && good != 0)
         {
-            score += 100; // try a return here ?
+            score += 200; //(100 * (depth - i)); // try a return here ?
             break ;
         }
         else if(bad != 0 && good == 0)
         {
-            score -= 100;
+            score -= 200; //(100 * (depth - i));
             break ;
         }
     }
@@ -212,48 +225,31 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
     return (score);
 }
 
-int     first_to_play(std::vector<std::string> board, char player, int depth, std::vector<coord> moves, int in_use)
+int     comp_depth(int nb_move)
 {
-    std::vector<string> board_test;
-    int     max;
-    int     temp;
-    
-    max = 100;
-    
-    for (int i = 0; i < moves.size() && i < 50; i++)
-    {
-        if (i != in_use)
-        {
-            board_test = board;
-            board_test[moves[i].x][moves[i].y] = (player == 'w') ? 'b' : 'w';
-            temp = simulate_game(board_test, player, depth);
-            if(temp < max)
-            {
-                max = temp;
-            }
-        }
-    }
-    return(max);
+    return(1000 / nb_move); //950
 }
+
 bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char player)
 {
     std::vector<string> board_test;
     int     max;
     int     temp;
+    int     depth;
     coord   max_coord;
     
     max = -10;
     max_coord.x = moves[0].x;
     max_coord.y = moves[0].y;
     
-    for (int i = 0; i < moves.size() && i < 99; i++)
+    depth = comp_depth(moves.size());//adjust depth depending on moves.size()
+//    std::cerr << "depth: " << depth << "size: " << moves.size() << std::endl;
+    
+    for (int i = 0; i < moves.size() && i < 500; i++) //190
     {
         board_test = board;
         board_test[moves[i].x][moves[i].y] = player;
-        if(player == 'w')
-            temp = first_to_play(board_test, player, 1, moves, i);
-        else
-            temp = simulate_game(board_test, player, 8);
+        temp = simulate_game(board_test, player, depth); //5
         if(temp > max)
         {
             max = temp;
@@ -261,9 +257,11 @@ bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char
         }
     }
     std::cout << max_coord.x << " " << max_coord.y << std::endl;
+//    std::cerr << "score: " << max << std::endl;
+    
     return (true);
 }
-/*
+
 bool    bench(std::vector<std::string> board, std::vector<coord> moves, char player, int lim, int depth)
 {
     std::vector<string> board_test;
@@ -289,7 +287,7 @@ bool    bench(std::vector<std::string> board, std::vector<coord> moves, char pla
     std::cout << max_coord.x << " " << max_coord.y << std::endl;
     return (true);
 }
-*/
+
 void nextMove(char player, vector <string> board)
 {
 //    coord    available;
@@ -301,8 +299,8 @@ void nextMove(char player, vector <string> board)
         std::cout << 21 << " " <<  21 << std::endl;
         return ;
     }
-    if(best_move(board, neighbour_cells(board), player)) return ;
-    //if(bench(board, neighbour_cells(board), player, 100, 9)) return ;
+    //if(best_move(board, neighbour_cells(board), player)) return ;
+    if(bench(board, neighbour_cells(board), player, 550, 2)) return ;
     
     return ;
 }
