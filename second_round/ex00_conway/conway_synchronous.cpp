@@ -23,7 +23,7 @@ std::vector<coord>  append(std::vector<coord> a, std::vector<coord> b)
     return (a);
 }
 
-std::vector< coord >   find(std::vector< std::string > board, char c)
+std::vector< coord >   find(const std::vector< std::string > & board, char c)
 {
     std::vector< coord >    res;
 
@@ -38,7 +38,7 @@ std::vector< coord >   find(std::vector< std::string > board, char c)
 	return(res);
 }
 
-coord      find_first(std::vector< std::string > board, char c)
+coord      find_first(const std::vector< std::string > &board, char c)
 {
     for (int x = 0; x < board.size(); x++)
     {
@@ -53,7 +53,7 @@ coord      find_first(std::vector< std::string > board, char c)
 }
 
 
-int      count(std::vector< std::string > board, char c)
+int      count(const std::vector< std::string > &board, char c)
 {
     int    res;
 
@@ -69,7 +69,7 @@ int      count(std::vector< std::string > board, char c)
 	return(res);
 }
 
-int     nb_neighbour(std::vector< std::string > board, coord pos, char c)
+int     nb_neighbour(const std::vector< std::string > &board, coord pos, char c)
 {
     int    res;
     std::vector< coord >    n_pos;
@@ -96,7 +96,7 @@ int     nb_neighbour(std::vector< std::string > board, coord pos, char c)
     return (res);
 }
 
-bool    has_neighbour(std::vector< std::string > board, coord pos)
+bool    has_neighbour(const std::vector< std::string > & board, coord pos)
 {
     std::vector< coord >    n_pos;
     
@@ -141,7 +141,7 @@ bool    has_neighbour(std::vector< std::string > board, coord pos)
 }
 
 
-std::vector< coord >    neighbour_cells(std::vector< std::string > board)
+std::vector< coord >    neighbour_cells(const std::vector< std::string > & board)
 {
     std::vector<coord>  res;
     for (int x = 0; x < board.size(); x++)
@@ -155,7 +155,7 @@ std::vector< coord >    neighbour_cells(std::vector< std::string > board)
     return(res);
 }
 
-void    sig_empty(const std::vector<std::string> board, std::vector<std::string> &new_board, coord pos, char player)
+void    sig_empty(const std::vector<std::string> & board, std::vector<std::string> &new_board, coord pos, char player)
 {
     int  us;
     int  them;
@@ -168,7 +168,7 @@ void    sig_empty(const std::vector<std::string> board, std::vector<std::string>
         new_board[pos.x][pos.y] = (us < them) ? them_c : player;
 }
 
-void    sig_filled(const std::vector<std::string> board, std::vector<std::string> &new_board, coord pos)
+void    sig_filled(const std::vector<std::string> & board, std::vector<std::string> &new_board, coord pos)
 {
     unsigned int    neighbours;
     
@@ -177,7 +177,7 @@ void    sig_filled(const std::vector<std::string> board, std::vector<std::string
         new_board[pos.x][pos.y] = '-';
 }
 
-std::vector<std::string>    simulate_step(std::vector<std::string> board, char player)
+std::vector<std::string>    simulate_step(const std::vector<std::string> & board, char player)
 {
     coord   pos;
     std::vector<std::string>     new_board;
@@ -196,11 +196,12 @@ std::vector<std::string>    simulate_step(std::vector<std::string> board, char p
     return (new_board);
 }
 
-int     simulate_game(std::vector<std::string> board, char player, int depth)
+int     simulate_game(const std::vector<std::string> & t_board, char player, int depth)
 {
     int     score;
     int     good;
     int     bad;
+    std::vector<std::string> board = t_board;
     
     score = 0;
     for(int i = 0; i < depth; i++)
@@ -227,10 +228,10 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
 
 int     comp_depth(int nb_move)
 {
-    return(1100 / nb_move);
+    return(6000 / nb_move);
 }
 
-bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char player)
+bool    best_move(std::vector<std::string> board, const std::vector<coord> & moves, char player)
 {
     int     max;
     int     temp;
@@ -244,10 +245,10 @@ bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char
     depth = comp_depth(moves.size());
 //    std::cerr << "depth: " << depth << "size: " << moves.size() << std::endl;
     
-    for (int i = 0; i < moves.size() && i < 500; i++) //190
+    for (int i = 0; i < moves.size() && i < 500; i++)
     {
         board[moves[i].x][moves[i].y] = player;
-        temp = simulate_game(board, player, depth); //5
+        temp = simulate_game(board, player, depth);
         board[moves[i].x][moves[i].y] = '-';
         if(temp > max)
         {
@@ -256,23 +257,20 @@ bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char
         }
     }
     std::cout << max_coord.x << " " << max_coord.y << std::endl;
-    std::cerr << "score: " << max << std::endl;
+//    std::cerr << "score: " << max << std::endl;
     
     return (true);
 }
 
 void nextMove(char player, vector <string> board)
 {
-//    coord    available;
-    
-//    available = find_first(board, '-');
-    
     if(find_first(board, 'w').x == -1 && find_first(board, 'b').x == -1)
     {
         std::cout << 14 << " " <<  14 << std::endl;
         return ;
     }
-    if(best_move(board, neighbour_cells(board), player)) return ;
+    
+    best_move(board, neighbour_cells(board), player);
     
     return ;
 }
