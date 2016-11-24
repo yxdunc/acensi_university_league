@@ -230,7 +230,7 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
 
 int     comp_depth(int nb_move)
 {
-    return(1000 / nb_move); //950
+    return(100 / nb_move); //950
 }
 
 void    t_simulate_game(std::vector<string> board, std::vector<coord> moves, char player, int index, int size, pair<int, coord> &res)
@@ -245,18 +245,13 @@ void    t_simulate_game(std::vector<string> board, std::vector<coord> moves, cha
     max_coord.y = moves[index].y;
 
     depth = comp_depth(size);//adjust depth depending on moves.size()
-
-	std::stringstream msg;
-	msg << "thread [" << index << "]" << std::endl;
-	std::cout << msg.str();
-
+    std::cerr << depth << std::endl;
     for (int i = index; i < (index + size); i++)
     {
-		msg.str("");
-		msg << "thread [" << index << "]" << i << std::endl;
-		std::cout << msg.str();
+
         board[moves[i].x][moves[i].y] = player;
         temp = simulate_game(board, player, depth); //5
+
         board[moves[i].x][moves[i].y] = '-';
         if(temp > max)
         {
@@ -264,13 +259,14 @@ void    t_simulate_game(std::vector<string> board, std::vector<coord> moves, cha
             max_coord = moves[i];
         }
     }
-	std::cerr << "thread ended" << std::endl;
     res.first = max;
     res.second = coord(max_coord.x, max_coord.y);
 }
 
 bool    t_best_move(std::vector<std::string> board, std::vector<coord> moves, char player)
 {
+    std::pair< int, coord > t_max_1;
+    std::pair< int, coord > t_max_2;
     std::vector< std::pair< int, coord > > t_max;
     int     max;
     int     temp;
@@ -281,22 +277,17 @@ bool    t_best_move(std::vector<std::string> board, std::vector<coord> moves, ch
     max_coord.x = moves[0].x;
     max_coord.y = moves[0].y;
 
-    depth = comp_depth(moves.size());//adjust depth depending on moves.size()
-    std::cerr << "depth: " << depth << "size: " << moves.size() << std::endl;
-    // x - x / nbt * nbt (offset: x/nbt*nbt) remaining calculations
 
-
-    static const int nbt = 10;
-    t_max.reserve(nbt + 1);
-    int length = moves.size()/nbt;
+    static const int nbt = 2;
+    t_max.resize(3);
+    int length = moves.size()/3;
     std::thread t[nbt];
-    // launching threads
-	std::cerr << "launching threads, length = " << length << std::endl;
-    for (int i = 0; i < nbt; ++i)
-    {
-        t[i] = std::thread(t_simulate_game, board, moves, player, length * i, length, std::ref(t_max[i]));
-    }
+    t[0] = std::thread(t_simulate_game, board, moves, player, length * 0, length, std::ref(t_max_1));
+    t[1] = std::thread(t_simulate_game, board, moves, player, length * 1, length, std::ref(t_max_2));
 
+    //depth = comp_depth((moves.size() - ((moves.size()/nbt)*nbt)) + 10);//adjust depth to be as long as annex threads
+    depth = comp_depth(moves.size());
+    std::cerr << "depth: " << depth << "size: " << moves.size() << std::endl;
     for (int i = length * nbt; i < moves.size(); i++) //190
     {
         board[moves[i].x][moves[i].y] = player;
@@ -308,16 +299,18 @@ bool    t_best_move(std::vector<std::string> board, std::vector<coord> moves, ch
             max_coord = moves[i];
         }
     }
-    t_max[10].first = max;
-    t_max[10].second = max_coord;
+    t_max[2].first = max;
+    t_max[2].second = max_coord;
 
-	std::cerr << "end main thread" << std::endl;
-	
     for (int i = 0; i < nbt; ++i)
     {
         t[i].join();
     }
-	std::cerr << "stoping threads" << std::endl;
+	t_max[0] = t_max_1;
+	t_max[1] = t_max_2;
+	std::cerr << "stoping threads, t_max[0]: " << t_max[0].second.serialize() << "score: " << t_max[0].first << std::endl;
+	std::cerr << "stoping threads, t_max[1]: " << t_max[1].second.serialize() << "score: " << t_max[1].first << std::endl;
+	std::cerr << "stoping threads, t_max[1]: " << t_max[2].second.serialize() << "score: " << t_max[2].first << std::endl;
 
     for(int i = 0; i < t_max.size(); i++)
     {
@@ -329,66 +322,7 @@ bool    t_best_move(std::vector<std::string> board, std::vector<coord> moves, ch
     }
 
     std::cout << max_coord.x << " " << max_coord.y << std::endl;
-    std::cerr << "score: " << max << std::endl;
 
-    return (true);
-}
-
-bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char player)
-{
-    std::vector<string> board_test;
-    int     max;
-    int     temp;
-    int     depth;
-    coord   max_coord;
-
-    max = -10;
-    max_coord.x = moves[0].x;
-    max_coord.y = moves[0].y;
-
-    depth = comp_depth(moves.size());//adjust depth depending on moves.size()
-//    std::cerr << "depth: " << depth << "size: " << moves.size() << std::endl;
-
-    for (int i = 0; i < moves.size() && i < 500; i++) //190
-    {
-        board_test = board;
-        board_test[moves[i].x][moves[i].y] = player;
-        temp = simulate_game(board_test, player, depth); //5
-        if(temp > max)
-        {
-            max = temp;
-            max_coord = moves[i];
-        }
-    }
-    std::cout << max_coord.x << " " << max_coord.y << std::endl;
-//    std::cerr << "score: " << max << std::endl;
-
-    return (true);
-}
-
-bool    bench(std::vector<std::string> board, std::vector<coord> moves, char player, int lim, int depth)
-{
-    std::vector<string> board_test;
-    int     max;
-    int     temp;
-    coord   max_coord;
-
-    max = -10;
-    max_coord.x = moves[0].x;
-    max_coord.y = moves[0].y;
-
-    for (int i = 0; i < lim; i++)
-    {
-        board_test = board;
-        board_test[moves[0].x][moves[0].y] = player;
-        temp = simulate_game(board_test, player, depth);
-        if(temp > max)
-        {
-            max = temp;
-            max_coord = moves[i];
-        }
-    }
-    std::cout << max_coord.x << " " << max_coord.y << std::endl;
     return (true);
 }
 
@@ -405,7 +339,6 @@ void nextMove(char player, vector <string> board)
     }
 
     if(t_best_move(board, neighbour_cells(board), player)) return ;
-    //if(bench(board, neighbour_cells(board), player, 555, 2)) return ;
 
     return ;
 }
@@ -425,6 +358,8 @@ int main(void)
 
     nextMove(player,board);
     std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+    unsigned concurentThreadsSupported = std::thread::hardware_concurrency(); 
+    std::cerr << "Ts = " << concurentThreadsSupported <<std::endl;
     std::cerr << "Time = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() <<std::endl;
     std::cerr << "Time = " << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count() <<std::endl;
     return 0;
