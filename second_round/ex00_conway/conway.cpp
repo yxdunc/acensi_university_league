@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <chrono>
+#include <thread>
 using namespace std;
 
 #define FIGX 15
@@ -210,12 +212,12 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
         good = count(board, player);
         if(bad == 0 && good != 0)
         {
-            score += 200; //(100 * (depth - i)); // try a return here ?
+            score += (200 * (depth - i)); // try a return here ?
             break ;
         }
         else if(bad != 0 && good == 0)
         {
-            score -= 200; //(100 * (depth - i));
+            score -= (200 * (depth - i));
             break ;
         }
     }
@@ -229,6 +231,47 @@ int     comp_depth(int nb_move)
 {
     return(1000 / nb_move); //950
 }
+
+void    t_simulate_game()
+{
+    
+}
+
+bool    t_best_move(std::vector<std::string> board, std::vector<coord> moves, char player)
+{
+    std::vector<std::string> board_test;
+    std::vector< std::pair< int, coord > > to_max  
+    int     max;
+    int     temp;
+    int     depth;
+    coord   max_coord;
+    
+    max = -10;
+    max_coord.x = moves[0].x;
+    max_coord.y = moves[0].y;
+    
+    depth = comp_depth(moves.size());//adjust depth depending on moves.size()
+//    std::cerr << "depth: " << depth << "size: " << moves.size() << std::endl;
+    
+    // x - x / nbt * nbt (offset: x/nbt*nbt) remaining calculations
+    
+    for (int i = 0; i < moves.size() && i < 500; i++) //190
+    {
+        board_test = board;
+        board_test[moves[i].x][moves[i].y] = player;
+        temp = simulate_game(board_test, player, depth); //5
+        if(temp > max)
+        {
+            max = temp;
+            max_coord = moves[i];
+        }
+    }
+    std::cout << max_coord.x << " " << max_coord.y << std::endl;
+//    std::cerr << "score: " << max << std::endl;
+    
+    return (true);
+}
+
 
 bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char player)
 {
@@ -296,11 +339,12 @@ void nextMove(char player, vector <string> board)
     
     if(find_first(board, 'w').x == -1 && find_first(board, 'b').x == -1)
     {
-        std::cout << 21 << " " <<  21 << std::endl;
+        std::cout << 14 << " " <<  14 << std::endl;
         return ;
     }
-    //if(best_move(board, neighbour_cells(board), player)) return ;
-    if(bench(board, neighbour_cells(board), player, 550, 2)) return ;
+    
+    if(best_move(board, neighbour_cells(board), player)) return ;
+    //if(bench(board, neighbour_cells(board), player, 555, 2)) return ;
     
     return ;
 }
@@ -308,6 +352,7 @@ void nextMove(char player, vector <string> board)
 int main(void)
 {
     char player;
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     vector <string> board;
 
     cin >> player;
@@ -318,6 +363,8 @@ int main(void)
     }
 
     nextMove(player,board);
-
+    std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+    std::cerr << "Time = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() <<std::endl;
+    std::cerr << "Time = " << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count() <<std::endl;
     return 0;
 }
