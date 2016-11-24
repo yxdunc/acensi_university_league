@@ -3,6 +3,7 @@
 #include <map>
 #include <chrono>
 #include <thread>
+#include <sstream>
 using namespace std;
 
 #define FIGX 15
@@ -75,18 +76,18 @@ int     nb_neighbour(std::vector< std::string > board, coord pos, char c)
 {
     int    res;
     std::vector< coord >    n_pos;
-    
+
     n_pos.push_back(coord(pos.x, pos.y + 1));
     n_pos.push_back(coord(pos.x, pos.y - 1));
-    
+
     n_pos.push_back(coord(pos.x + 1, pos.y));
     n_pos.push_back(coord(pos.x + 1, pos.y + 1));
     n_pos.push_back(coord(pos.x + 1, pos.y - 1));
-    
+
     n_pos.push_back(coord(pos.x - 1, pos.y));
     n_pos.push_back(coord(pos.x - 1, pos.y + 1));
     n_pos.push_back(coord(pos.x - 1, pos.y - 1));
-    
+
     res = 0;
     for (int i = 0; i < n_pos.size(); i++)
     {
@@ -94,51 +95,51 @@ int     nb_neighbour(std::vector< std::string > board, coord pos, char c)
            && board[n_pos[i].x][n_pos[i].y] == c)
             res++;
     }
-    
+
     return (res);
 }
 
 bool    has_neighbour(std::vector< std::string > board, coord pos)
 {
     std::vector< coord >    n_pos;
-    
+
     n_pos.push_back(coord(pos.x, pos.y + 1));
     n_pos.push_back(coord(pos.x, pos.y - 1));
-    
+
     n_pos.push_back(coord(pos.x + 1, pos.y));
     n_pos.push_back(coord(pos.x + 1, pos.y + 1));
     n_pos.push_back(coord(pos.x + 1, pos.y - 1));
-    
+
     n_pos.push_back(coord(pos.x - 1, pos.y));
     n_pos.push_back(coord(pos.x - 1, pos.y + 1));
     n_pos.push_back(coord(pos.x - 1, pos.y - 1));
-    
+
     //
     n_pos.push_back(coord(pos.x + 2, pos.y));
     n_pos.push_back(coord(pos.x - 2, pos.y));
     n_pos.push_back(coord(pos.x, pos.y + 2));
     n_pos.push_back(coord(pos.x, pos.y - 2));
-    
+
     n_pos.push_back(coord(pos.x + 2, pos.y + 1));
     n_pos.push_back(coord(pos.x + 2, pos.y - 1));
-    
+
     n_pos.push_back(coord(pos.x - 2, pos.y + 1));
     n_pos.push_back(coord(pos.x - 2, pos.y - 1));
-    
+
     n_pos.push_back(coord(pos.x + 1, pos.y + 2));
     n_pos.push_back(coord(pos.x - 1, pos.y + 2));
-    
+
     n_pos.push_back(coord(pos.x + 1, pos.y - 2));
     n_pos.push_back(coord(pos.x - 1, pos.y - 2));
     //
-    
+
     for (int i = 0; i < n_pos.size(); i++)
     {
         if(n_pos[i].x >= 0 && n_pos[i].y >= 0 && n_pos[i].x < 29 && n_pos[i].y < 29\
            && board[n_pos[i].x][n_pos[i].y] != '-')
             return(true);
     }
-    
+
     return (false);
 }
 
@@ -162,7 +163,7 @@ void    sig_empty(const std::vector<std::string> board, std::vector<std::string>
     int  us;
     int  them;
     char them_c;
-    
+
     them_c = (player == 'w') ? 'b' : 'w';
     us = nb_neighbour(board, pos, player);
     them = nb_neighbour(board, pos, them_c);
@@ -173,7 +174,7 @@ void    sig_empty(const std::vector<std::string> board, std::vector<std::string>
 void    sig_filled(const std::vector<std::string> board, std::vector<std::string> &new_board, coord pos)
 {
     unsigned int    neighbours;
-    
+
     neighbours = nb_neighbour(board, pos, 'w') + nb_neighbour(board, pos, 'b');
     if (neighbours != 3 && neighbours != 2)
         new_board[pos.x][pos.y] = '-';
@@ -183,7 +184,7 @@ std::vector<std::string>    simulate_step(std::vector<std::string> board, char p
 {
     coord   pos;
     std::vector<std::string>     new_board;
-    
+
     new_board = board;
     for (pos.x = 0; pos.x < board.size(); pos.x++)
     {
@@ -203,7 +204,7 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
     int     score;
     int     good;
     int     bad;
-    
+
     score = 0;
     for(int i = 0; i < depth; i++)
     {
@@ -221,9 +222,9 @@ int     simulate_game(std::vector<std::string> board, char player, int depth)
             break ;
         }
     }
-    
+
     score += count(board, player) - count(board, (player == 'w') ? 'b' : 'w');
-    
+
     return (score);
 }
 
@@ -232,46 +233,106 @@ int     comp_depth(int nb_move)
     return(1000 / nb_move); //950
 }
 
-void    t_simulate_game()
+void    t_simulate_game(std::vector<string> board, std::vector<coord> moves, char player, int index, int size, pair<int, coord> &res)
 {
-    
-}
-
-bool    t_best_move(std::vector<std::string> board, std::vector<coord> moves, char player)
-{
-    std::vector<std::string> board_test;
-    std::vector< std::pair< int, coord > > to_max  
     int     max;
     int     temp;
     int     depth;
     coord   max_coord;
-    
+
     max = -10;
-    max_coord.x = moves[0].x;
-    max_coord.y = moves[0].y;
-    
-    depth = comp_depth(moves.size());//adjust depth depending on moves.size()
-//    std::cerr << "depth: " << depth << "size: " << moves.size() << std::endl;
-    
-    // x - x / nbt * nbt (offset: x/nbt*nbt) remaining calculations
-    
-    for (int i = 0; i < moves.size() && i < 500; i++) //190
+    max_coord.x = moves[index].x;
+    max_coord.y = moves[index].y;
+
+    depth = comp_depth(size);//adjust depth depending on moves.size()
+
+	std::stringstream msg;
+	msg << "thread [" << index << "]" << std::endl;
+	std::cout << msg.str();
+
+    for (int i = index; i < (index + size); i++)
     {
-        board_test = board;
-        board_test[moves[i].x][moves[i].y] = player;
-        temp = simulate_game(board_test, player, depth); //5
+		msg.str("");
+		msg << "thread [" << index << "]" << i << std::endl;
+		std::cout << msg.str();
+        board[moves[i].x][moves[i].y] = player;
+        temp = simulate_game(board, player, depth); //5
+        board[moves[i].x][moves[i].y] = '-';
         if(temp > max)
         {
             max = temp;
             max_coord = moves[i];
         }
     }
-    std::cout << max_coord.x << " " << max_coord.y << std::endl;
-//    std::cerr << "score: " << max << std::endl;
-    
-    return (true);
+	std::cerr << "thread ended" << std::endl;
+    res.first = max;
+    res.second = coord(max_coord.x, max_coord.y);
 }
 
+bool    t_best_move(std::vector<std::string> board, std::vector<coord> moves, char player)
+{
+    std::vector< std::pair< int, coord > > t_max;
+    int     max;
+    int     temp;
+    int     depth;
+    coord   max_coord;
+
+    max = -10;
+    max_coord.x = moves[0].x;
+    max_coord.y = moves[0].y;
+
+    depth = comp_depth(moves.size());//adjust depth depending on moves.size()
+    std::cerr << "depth: " << depth << "size: " << moves.size() << std::endl;
+    // x - x / nbt * nbt (offset: x/nbt*nbt) remaining calculations
+
+
+    static const int nbt = 10;
+    t_max.reserve(nbt + 1);
+    int length = moves.size()/nbt;
+    std::thread t[nbt];
+    // launching threads
+	std::cerr << "launching threads, length = " << length << std::endl;
+    for (int i = 0; i < nbt; ++i)
+    {
+        t[i] = std::thread(t_simulate_game, board, moves, player, length * i, length, std::ref(t_max[i]));
+    }
+
+    for (int i = length * nbt; i < moves.size(); i++) //190
+    {
+        board[moves[i].x][moves[i].y] = player;
+        temp = simulate_game(board, player, depth); //5
+        board[moves[i].x][moves[i].y] = '-';
+        if(temp > max)
+        {
+            max = temp;
+            max_coord = moves[i];
+        }
+    }
+    t_max[10].first = max;
+    t_max[10].second = max_coord;
+
+	std::cerr << "end main thread" << std::endl;
+	
+    for (int i = 0; i < nbt; ++i)
+    {
+        t[i].join();
+    }
+	std::cerr << "stoping threads" << std::endl;
+
+    for(int i = 0; i < t_max.size(); i++)
+    {
+        if(t_max[i].first > max)
+        {
+            max = t_max[i].first;
+            max_coord = t_max[i].second;
+        }
+    }
+
+    std::cout << max_coord.x << " " << max_coord.y << std::endl;
+    std::cerr << "score: " << max << std::endl;
+
+    return (true);
+}
 
 bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char player)
 {
@@ -280,14 +341,14 @@ bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char
     int     temp;
     int     depth;
     coord   max_coord;
-    
+
     max = -10;
     max_coord.x = moves[0].x;
     max_coord.y = moves[0].y;
-    
+
     depth = comp_depth(moves.size());//adjust depth depending on moves.size()
 //    std::cerr << "depth: " << depth << "size: " << moves.size() << std::endl;
-    
+
     for (int i = 0; i < moves.size() && i < 500; i++) //190
     {
         board_test = board;
@@ -301,7 +362,7 @@ bool    best_move(std::vector<std::string> board, std::vector<coord> moves, char
     }
     std::cout << max_coord.x << " " << max_coord.y << std::endl;
 //    std::cerr << "score: " << max << std::endl;
-    
+
     return (true);
 }
 
@@ -311,11 +372,11 @@ bool    bench(std::vector<std::string> board, std::vector<coord> moves, char pla
     int     max;
     int     temp;
     coord   max_coord;
-    
+
     max = -10;
     max_coord.x = moves[0].x;
     max_coord.y = moves[0].y;
-    
+
     for (int i = 0; i < lim; i++)
     {
         board_test = board;
@@ -334,18 +395,18 @@ bool    bench(std::vector<std::string> board, std::vector<coord> moves, char pla
 void nextMove(char player, vector <string> board)
 {
 //    coord    available;
-    
+
 //    available = find_first(board, '-');
-    
+
     if(find_first(board, 'w').x == -1 && find_first(board, 'b').x == -1)
     {
         std::cout << 14 << " " <<  14 << std::endl;
         return ;
     }
-    
-    if(best_move(board, neighbour_cells(board), player)) return ;
+
+    if(t_best_move(board, neighbour_cells(board), player)) return ;
     //if(bench(board, neighbour_cells(board), player, 555, 2)) return ;
-    
+
     return ;
 }
 
